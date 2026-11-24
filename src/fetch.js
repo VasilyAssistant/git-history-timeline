@@ -152,8 +152,10 @@ function sleep(ms) {
  * Search for commits by author across all public repositories
  * This catches contributions to repos you don't own/have access to
  */
-async function searchCommitsByAuthor(username, token, commitMap, repoSet) {
+async function searchCommitsByAuthor(author, token, commitMap, repoSet) {
   console.log('\n🔍 Searching for contributions to other repositories...');
+  // Emails are not always linked to a GitHub account, so search them by email
+  const qualifier = author.includes('@') ? 'author-email' : 'author';
   
   let page = 1;
   let totalFound = 0;
@@ -168,7 +170,7 @@ async function searchCommitsByAuthor(username, token, commitMap, repoSet) {
       }
       
       const response = await githubFetch(
-        `/search/commits?q=author:${username}&sort=author-date&order=desc&per_page=100&page=${page}`,
+        `/search/commits?q=${qualifier}:${encodeURIComponent(author)}&sort=author-date&order=desc&per_page=100&page=${page}`,
         token
       );
       
@@ -187,6 +189,7 @@ async function searchCommitsByAuthor(username, token, commitMap, repoSet) {
             message: item.commit.message.split('\n')[0],
             date: item.commit.author.date,
             repo: item.repository.full_name,
+            private: item.repository.private,
             branch: 'unknown', // Search API doesn't include branch
             url: item.html_url
           });
@@ -233,12 +236,17 @@ async function searchCommitsByAuthor(username, token, commitMap, repoSet) {
  * @param {string|null} targetUser - Username to fetch for (null = authenticated user)
  * @param {string} repoFilter - Filter: 'all', 'owned', 'forks', 'contributions'
  * @param {boolean} forceRefresh - If true, ignore cache and fetch everything
+ * @param {object} options
+ * @param {string|null} options.org - Organization whose repositories to scan instead of the token user's
+ * @param {string[]} options.authors - GitHub logins or commit emails to count (default: [username])
  */
-export async function fetchAllCommits(token, targetUser = null, repoFilter = 'all', forceRefresh = false) {
-  // Get authenticated user info
-  const userResponse = await githubFetch('/user', token);
-  const user = await userResponse.json();
-  const username = targetUser || user.login;
+export async function fetchAllCommits(token, targetUser = null, repoFilter = 'all', forceRefresh = false, { org = null, authors = [] } = {}) {
+  let username = org || targetUser;
+  if (!username) {
+    const userResponse = await githubFetch('/user', token);
+    username = (await userResponse.json()).login;
+  }
+  const authorList = authors.length > 0 ? authors : [username];
   
   const filterLabels = {
     all: 'all repositories',
@@ -248,10 +256,17 @@ export async function fetchAllCommits(token, targetUser = null, repoFilter = 'al
   };
   
   console.log(`👤 Fetching commits for @${username}`);
+  if (authors.length > 0) {
+    console.log(`✍️  Authors: ${authorList.length}`);
+  }
   console.log(`📋 Filter: ${filterLabels[repoFilter]}`);
   
-  // Load existing cache
-  const cache = forceRefresh ? { repos: {}, commits: [], lastSearchDate: null } : loadRepoCache();
+  // Load existing cache; a cache built for other authors or another owner is useless
+  const cacheKey = JSON.stringify({ username, authors: authorList });
+  let cache = forceRefresh ? null : loadRepoCache();
+  if (!cache || cache.key !== cacheKey) {
+    cache = { key: cacheKey, repos: {}, commits: [], lastSearchDate: null };
+  }
   
   // Collect all commits (deduplicated by SHA)
   const commitMap = new Map();
@@ -269,7 +284,10 @@ export async function fetchAllCommits(token, targetUser = null, repoFilter = 'al
   // === PHASE 1: Repos you have access to (skip if contributions-only) ===
   if (repoFilter !== 'contributions') {
     console.log('\n📚 Phase 1: Loading your repositories...');
-    const allRepos = await fetchAllPages('/user/repos?per_page=100&type=all&sort=updated', token);
+    const reposEndpoint = org
+      ? `/orgs/${encodeURIComponent(org)}/repos?per_page=100&type=all&sort=updated`
+      : '/user/repos?per_page=100&type=all&sort=updated';
+    const allRepos = await fetchAllPages(reposEndpoint, token);
     
     // Filter repos based on user preference
     let repos = allRepos;
@@ -310,33 +328,36 @@ export async function fetchAllCommits(token, targetUser = null, repoFilter = 'al
           // Get all branches
           const branches = await fetchAllPages(`/repos/${repo.full_name}/branches?per_page=100`, token);
           
-          // Fetch commits from each branch
+          // Fetch commits from each branch, for each author
           for (const branch of branches) {
-            try {
-              const commits = await fetchAllPages(
-                `/repos/${repo.full_name}/commits?sha=${encodeURIComponent(branch.name)}&per_page=${COMMITS_PER_PAGE}&author=${username}`,
-                token
-              );
+            for (const author of authorList) {
+              try {
+                const commits = await fetchAllPages(
+                  `/repos/${repo.full_name}/commits?sha=${encodeURIComponent(branch.name)}&per_page=${COMMITS_PER_PAGE}&author=${encodeURIComponent(author)}`,
+                  token
+                );
               
-              for (const commit of commits) {
-                if (!commitMap.has(commit.sha)) {
-                  commitMap.set(commit.sha, {
-                    sha: commit.sha,
-                    message: commit.commit.message.split('\n')[0], // First line only
-                    date: commit.commit.author.date,
-                    repo: repo.full_name,
-                    branch: branch.name,
-                    url: commit.html_url
-                  });
-                  repoSet.add(repo.full_name);
-                  newCommitsInPhase1++;
+                for (const commit of commits) {
+                  if (!commitMap.has(commit.sha)) {
+                    commitMap.set(commit.sha, {
+                      sha: commit.sha,
+                      message: commit.commit.message.split('\n')[0], // First line only
+                      date: commit.commit.author.date,
+                      repo: repo.full_name,
+                      private: repo.private,
+                      branch: branch.name,
+                      url: commit.html_url
+                    });
+                    repoSet.add(repo.full_name);
+                    newCommitsInPhase1++;
+                  }
                 }
-              }
-            } catch (err) {
-              // Skip branches we can't access
-              if (!err.message.includes('409') && !err.message.includes('404')) {
-                const displayName = process.env.CI ? '[repository/branch]' : `${repo.name}/${branch.name}`;
-                console.log(`   ⚠️  Skipping ${displayName}: ${err.message}`);
+              } catch (err) {
+                // Skip branches we can't access
+                if (!err.message.includes('409') && !err.message.includes('404')) {
+                  const displayName = process.env.CI ? '[repository/branch]' : `${repo.name}/${branch.name}`;
+                  console.log(`   ⚠️  Skipping ${displayName}: ${err.message}`);
+                }
               }
             }
           }
@@ -371,7 +392,9 @@ export async function fetchAllCommits(token, targetUser = null, repoFilter = 'al
   // === PHASE 2: Search for external contributions (skip if owned or forks only) ===
   if (repoFilter === 'all' || repoFilter === 'contributions') {
     console.log('\n📚 Phase 2: Finding external contributions...');
-    await searchCommitsByAuthor(username, token, commitMap, repoSet);
+    for (const author of authorList) {
+      await searchCommitsByAuthor(author, token, commitMap, repoSet);
+    }
   }
   
   // Save updated cache

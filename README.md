@@ -73,6 +73,7 @@ Generate with: `npm run widget`
 
 ```bash
 ./run.sh --user octocat              # Different user
+./run.sh --org my-org --authors bot,bot@example.com  # Org repos, commits by these logins/emails
 ./run.sh --repos owned               # Only repos you own
 ./run.sh --repos forks               # Only forked repos
 ./run.sh --repos contributions       # Only external contributions
@@ -157,6 +158,24 @@ examples/                   # Demo and test files
 docs/                       # GitHub Pages
 └── theme-demo.html         # Theme configuration demo
 ```
+
+## Organization and Bot Accounts
+
+`--org <org>` scans the organization's repositories instead of the token
+user's. `--authors` lists who counts as the author: GitHub logins or commit
+emails, comma-separated. Use an email when commits carry an address that is
+not linked to any GitHub account.
+
+The page lists commits per repository. Public repositories are shown by name;
+all private repositories are merged into one "Private repositories" row, so
+their names never appear on the page.
+
+The deploy workflow builds the page for the `VasilyAssistant` organization
+daily. It needs:
+
+- secret `GH_TIMELINE_TOKEN`: a fine-grained token with resource owner
+  `VasilyAssistant`, all repositories, read-only Contents and Metadata;
+- Settings → Pages → Source: GitHub Actions.
 
 ## Caching
 
