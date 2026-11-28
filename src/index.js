@@ -29,6 +29,12 @@ const userIndex = args.indexOf('--user');
 const targetUser = userIndex !== -1 ? args[userIndex + 1] : null;
 const reposIndex = args.indexOf('--repos');
 const repoFilter = reposIndex !== -1 ? args[reposIndex + 1] : 'all'; // all, owned, forks, contributions
+const orgIndex = args.indexOf('--org');
+const targetOrg = orgIndex !== -1 ? args[orgIndex + 1] : null;
+const authorsIndex = args.indexOf('--authors');
+const authors = authorsIndex !== -1
+  ? (args[authorsIndex + 1] || '').split(',').map(a => a.trim()).filter(Boolean)
+  : [];
 
 async function main() {
   // Validate token
@@ -40,6 +46,11 @@ async function main() {
     console.error('\nGenerate a token at:');
     console.error('  https://github.com/settings/tokens/new');
     console.error('  (Select "repo" and "read:user" scopes)');
+    process.exit(1);
+  }
+
+  if (targetOrg && authors.length === 0) {
+    console.error('\x1b[31mError: --org requires --authors <login-or-email,...>\x1b[0m');
     process.exit(1);
   }
 
@@ -57,7 +68,7 @@ async function main() {
     // Fetch fresh data
     console.log('🔍 Fetching commit history from GitHub...\n');
     
-    const result = await fetchAllCommits(token, targetUser, repoFilter, forceRefresh);
+    const result = await fetchAllCommits(token, targetUser, repoFilter, forceRefresh, { org: targetOrg, authors });
     commits = result.commits;
     username = result.username;
 

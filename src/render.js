@@ -424,6 +424,65 @@ function renderTimelineHTML({ username, commits, totalCommits, repoCount, embed 
       border-radius: var(--cell-radius);
     }
 
+    /* Per-repository breakdown */
+    .repos {
+      margin-bottom: 2rem;
+      padding: 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    .repos h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .repo-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.25rem 1rem;
+      padding: 0.4rem 0;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .repo-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-primary);
+    }
+
+    .repo-name a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .repo-name a:hover {
+      text-decoration: underline;
+    }
+
+    .repo-count {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .repo-bar {
+      grid-column: 1 / -1;
+      height: 4px;
+      background: var(--level-0);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .repo-bar span {
+      display: block;
+      height: 100%;
+      background: var(--level-3);
+    }
+
     /* Footer */
     footer {
       text-align: center;
@@ -534,6 +593,7 @@ function renderTimelineHTML({ username, commits, totalCommits, repoCount, embed 
     <header>${headerContent}
     </header>
 
+${renderRepos(commits.repos || [], totalCommits)}
     <div class="timeline">
       ${yearSections}
     </div>
@@ -718,6 +778,39 @@ function generateMonthLabels(calendar, year) {
   
   // Wrap in relative container
   return `<div style="position: relative; height: 1rem; width: calc(${calendar.length} * (var(--cell-size) + var(--cell-gap)))">${labels.join('')}</div>`;
+}
+
+/**
+ * Render the per-repository breakdown
+ */
+function renderRepos(repos, totalCommits) {
+  if (repos.length === 0) return '';
+  const max = repos[0].count;
+  const rows = repos.map(repo => {
+    const name = repo.private
+      ? `${escapeHtml(repo.name)} (${repo.repoCount})`
+      : `<a href="https://github.com/${escapeHtml(repo.name)}">${escapeHtml(repo.name)}</a>`;
+    const share = totalCommits > 0 ? Math.round((repo.count / totalCommits) * 100) : 0;
+    const width = max > 0 ? ((repo.count / max) * 100).toFixed(1) : 0;
+    return `
+      <div class="repo-row">
+        <span class="repo-name">${name}</span>
+        <span class="repo-count">${repo.count.toLocaleString()} · ${share}%</span>
+        <div class="repo-bar"><span style="width: ${width}%"></span></div>
+      </div>`;
+  }).join('');
+  return `
+    <section class="repos">
+      <h2>Repositories</h2>${rows}
+    </section>`;
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 /**

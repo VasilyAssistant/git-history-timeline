@@ -7,6 +7,8 @@
 #
 # Options:
 #   --user <username>  Specify GitHub username (default: authenticated user)
+#   --org <org>        Scan an organization's repositories (needs --authors)
+#   --authors <list>   Comma-separated GitHub logins or commit emails to count
 #   --no-open          Don't open browser after generation
 #   --cached           Use cached data, skip all API calls
 #   --refresh          Force refresh, ignore incremental cache
@@ -38,6 +40,8 @@ OPEN_BROWSER=true
 USE_CACHE=false
 FORCE_REFRESH=false
 TARGET_USER=""
+TARGET_ORG=""
+AUTHORS=""
 REPO_FILTER="all"
 
 # Parse arguments
@@ -45,6 +49,14 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --user)
             TARGET_USER="$2"
+            shift 2
+            ;;
+        --org)
+            TARGET_ORG="$2"
+            shift 2
+            ;;
+        --authors)
+            AUTHORS="$2"
             shift 2
             ;;
         --no-open)
@@ -137,6 +149,12 @@ fi
 NODE_ARGS=""
 if [ -n "$TARGET_USER" ]; then
     NODE_ARGS="$NODE_ARGS --user $TARGET_USER"
+fi
+if [ -n "$TARGET_ORG" ]; then
+    NODE_ARGS="$NODE_ARGS --org $TARGET_ORG"
+fi
+if [ -n "$AUTHORS" ]; then
+    NODE_ARGS="$NODE_ARGS --authors $AUTHORS"
 fi
 if [ "$USE_CACHE" = true ]; then
     NODE_ARGS="$NODE_ARGS --cached"

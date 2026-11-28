@@ -8,6 +8,10 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
       - '[0-9]+.[0-9]+.[0-9]+-*'
   
+  # Refresh the statistics daily
+  schedule:
+    - cron: '17 3 * * *'
+
   # Allow manual trigger from Actions tab
   workflow_dispatch:
 
@@ -54,9 +58,9 @@ jobs:
           path: |
             ~/.cache/git-history-timeline
             .cache
-          key: ${{ runner.os }}-git-data-${{ github.run_id }}
+          key: ${{ runner.os }}-git-data-vasily-${{ github.run_id }}
           restore-keys: |
-            ${{ runner.os }}-git-data-
+            ${{ runner.os }}-git-data-vasily-
       
       - name: Generate timeline
         env:
@@ -64,7 +68,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TIMELINE_TOKEN }}
         run: |
           # Run the generator (creates both index.html and index-embed.html)
-          node src/index.js
+          node src/index.js --org VasilyAssistant --authors Vasily-agent,git@heyvasily.com
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

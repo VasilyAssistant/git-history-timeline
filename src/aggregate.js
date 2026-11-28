@@ -11,6 +11,9 @@ export function aggregateCommits(commits) {
   const byDate = {};      // "2025-01-13" -> count
   const byYear = {};      // "2025" -> { "2025-01-13" -> count, ... }
   const repoSet = new Set();
+  const publicRepoCounts = {};     // "owner/name" -> count
+  const privateRepoSet = new Set();
+  let privateCommits = 0;
   
   for (const commit of commits) {
     // Parse date in UTC
@@ -27,9 +30,22 @@ export function aggregateCommits(commits) {
     }
     byYear[year][dateKey] = (byYear[year][dateKey] || 0) + 1;
     
-    // Track repos
+    // Track repos; private ones are only counted, never named
     repoSet.add(commit.repo);
+    if (commit.private === false) {
+      publicRepoCounts[commit.repo] = (publicRepoCounts[commit.repo] || 0) + 1;
+    } else {
+      privateRepoSet.add(commit.repo);
+      privateCommits++;
+    }
   }
+  
+  const repos = Object.entries(publicRepoCounts)
+    .map(([name, count]) => ({ name, count, private: false }));
+  if (privateCommits > 0) {
+    repos.push({ name: 'Private repositories', count: privateCommits, private: true, repoCount: privateRepoSet.size });
+  }
+  repos.sort((a, b) => b.count - a.count);
   
   // Calculate year totals and per-year max daily commits
   const yearTotals = {};
@@ -47,6 +63,7 @@ export function aggregateCommits(commits) {
     yearTotals,
     yearMaxDaily,  // Per-year max for proper color scaling
     repoCount: repoSet.size,
+    repos,         // Per-repository totals, all private repos merged into one row
     years: Object.keys(byYear).sort((a, b) => b - a) // Descending
   };
 }
