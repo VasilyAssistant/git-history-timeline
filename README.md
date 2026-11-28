@@ -1,226 +1,38 @@
-# Git History Timeline
+<p align="center">
+  <a href="https://github.com/VasilyAssistant">
+    <img src="https://avatars.githubusercontent.com/u/283462855?v=4&s=160" width="120" height="120" alt="Vasily">
+  </a>
+</p>
 
-Visualize your complete GitHub contribution history. Every commit, every branch, every repository.
+<h1 align="center">Vasily's Git History Timeline</h1>
 
-**[VasilyAssistant stats on GitHub Pages](https://vasilyassistant.github.io/git-history-timeline/)**: the bot's commit timeline and per-repository breakdown, rebuilt daily.
+<p align="center">
+  <b><a href="https://vasilyassistant.github.io/git-history-timeline/">Open the timeline</a></b>
+  · <a href="https://github.com/VasilyAssistant">Vasily on GitHub</a>
+</p>
 
-[![Build and Deploy](https://github.com/VasilyAssistant/git-history-timeline/actions/workflows/deploy.yml/badge.svg)](https://github.com/VasilyAssistant/git-history-timeline/actions/workflows/deploy.yml)
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-success)](https://vasilyassistant.github.io/git-history-timeline/)
-[![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+<p align="center">
+  <a href="https://github.com/VasilyAssistant/git-history-timeline/actions/workflows/deploy.yml"><img src="https://github.com/VasilyAssistant/git-history-timeline/actions/workflows/deploy.yml/badge.svg" alt="Build and Deploy"></a>
+</p>
 
-**[View Demo](https://kibotu.github.io/git-history-timeline/)** • **[Try Widget](examples/widget-demo.html)**
+Every commit Vasily has made, on every branch and in every repository, with a breakdown per
+repository. Private repositories appear as a single combined row, so their names never reach the
+page. The page is rebuilt daily.
 
-## Why
+## Deployment
 
-GitHub's profile shows contributions from default branches only. This shows **everything**.
+The deploy workflow builds the page for the `VasilyAssistant` organization and the authors
+`Vasily-agent` and `git@heyvasily.com`. It needs:
 
-## Quick Start
-
-```bash
-git clone https://github.com/kibotu/git-history-timeline.git
-cd git-history-timeline
-npm install
-echo "GITHUB_TOKEN=ghp_your_token_here" > .env
-./run.sh
-```
-
-Get your token at [github.com/settings/tokens/new](https://github.com/settings/tokens/new) (needs `repo` and `read:user` scopes).
-
-## Screenshots
-
-| Light Mode | Dark Mode |
-|------------|-----------|
-| ![Light Mode](docs/screenshot-light.png) | ![Dark Mode](docs/screenshot-dark.png) |
-
-## What You Get
-
-### Static Timeline (`dist/index.html`)
-Full contribution history with theme toggle and stats.
-
-### Animated Widget (`dist/widget.html`)
-High-velocity animation through 16 years in 30 seconds.
-
-![Widget Animation](docs/widget-demo.gif)
-
-```html
-<iframe 
-  src="widget.html?duration=30&theme=dark"
-  width="100%"
-  height="300"
-  frameborder="0">
-</iframe>
-```
-
-**Widget parameters:**
-- `duration=30` — Animation duration in seconds
-- `theme=dark` — Color theme (`dark` or `light`)
-- `autoplay=true` — Start automatically
-- `speed=1.0` — Playback speed (0.1-10x)
-
-Generate with: `npm run widget`
-
-## Features
-
-- All branches, not just main/master
-- Private repositories you own or collaborate on
-- Contributions to open source projects
-- Historical data going back years
-- Self-contained HTML (share or embed anywhere)
-- Animated widget with rolling 365-day window
-- Dark and light themes
-- Fully responsive (mobile to desktop)
-
-## Options
-
-```bash
-./run.sh --user octocat              # Different user
-./run.sh --org my-org --authors bot,bot@example.com  # Org repos, commits by these logins/emails
-./run.sh --repos owned               # Only repos you own
-./run.sh --repos forks               # Only forked repos
-./run.sh --repos contributions       # Only external contributions
-./run.sh --cached                    # Use cached data
-./run.sh --refresh                   # Force full refresh
-./run.sh --no-open                   # Don't open browser
-```
-
-## Embedding
-
-### Static Timeline
-
-```html
-<iframe 
-  src="https://yoursite.com/index-embed.html?theme=dark"
-  width="100%" 
-  height="800" 
-  frameborder="0">
-</iframe>
-```
-
-### Animated Widget
-
-```html
-<iframe 
-  src="https://yoursite.com/widget.html?duration=30&theme=dark"
-  width="100%"
-  height="300"
-  frameborder="0">
-</iframe>
-```
-
-Both support `?theme=dark` or `?theme=light`.
-
-## How It Works
-
-1. Fetches all your repositories via GitHub API
-2. Iterates through every branch in every repository
-3. Collects commit history with author matching
-4. Aggregates by date and calculates contribution levels
-5. Generates self-contained HTML with embedded data
-6. Caches results for faster subsequent runs
-
-First run takes ~5 minutes for large accounts. Subsequent runs take ~30 seconds (incremental updates only).
-
-## Technical Details
-
-- **Node.js 18+** required
-- **GitHub API** for data fetching
-- **Zero dependencies** for generated HTML
-- **Incremental caching** for performance
-- **Rate limit handling** with automatic retries
-- **Parallel processing** for multiple repositories
-- **60fps animation** using requestAnimationFrame
-- **Responsive design** with 6 breakpoints
-
-## Widget Specs
-
-- **16 years** of history in one animation
-- **5,844 days** of commit data
-- **257KB** self-contained file
-- **60 FPS** smooth animation
-- **52×7 grid** showing 365-day rolling window
-- **GitHub-style** contribution colors
-
-## Project Structure
-
-```
-dist/                       # Generated files (git-ignored)
-├── index.html              # Full page with theme toggle
-├── index-embed.html        # Embeddable version
-├── widget.html             # Animated widget (257KB)
-└── widget-data.json        # Widget data
-
-templates/                  # Build templates
-└── widget.html.template    # Widget HTML template
-
-examples/                   # Demo and test files
-├── widget-demo.html        # Widget showcase
-└── widget-embed-test.html  # Embedding tests
-
-docs/                       # GitHub Pages
-└── theme-demo.html         # Theme configuration demo
-```
-
-## Organization and Bot Accounts
-
-`--org <org>` scans the organization's repositories instead of the token
-user's. `--authors` lists who counts as the author: GitHub logins or commit
-emails, comma-separated. Use an email when commits carry an address that is
-not linked to any GitHub account.
-
-The page lists commits per repository. Public repositories are shown by name;
-all private repositories are merged into one "Private repositories" row, so
-their names never appear on the page.
-
-The deploy workflow builds the page for the `VasilyAssistant` organization
-daily. It needs:
-
-- secret `GH_TIMELINE_TOKEN`: a fine-grained token with resource owner
-  `VasilyAssistant`, all repositories, read-only Contents and Metadata;
+- secret `GH_TIMELINE_TOKEN`: a fine-grained token with resource owner `VasilyAssistant`,
+  all repositories, read-only Contents and Metadata;
 - Settings → Pages → Source: GitHub Actions.
 
-## Caching
+This fork adds `--org <org>` (scan an organization's repositories) and `--authors a,b`
+(GitHub logins or commit emails) to the original command line.
 
-Cache stored in `.cache/commits.json`. Delete to force full refresh or use `--refresh` flag.
+## Original project
 
-```bash
-./run.sh          # First run: ~5 min
-./run.sh          # Second run: ~30 sec (incremental)
-./run.sh --cached # Use cache, skip API calls
-./run.sh --refresh # Force full refresh
-```
-
-## Repository Filters
-
-| Filter | Description |
-|--------|-------------|
-| `all` | Everything (default) |
-| `owned` | Repos you own, excluding forks |
-| `forks` | Only forked repositories |
-| `contributions` | Only commits to repos you don't own |
-
-## Troubleshooting
-
-**No commits found:**
-- Check token has `repo` and `read:user` scopes
-- Verify token isn't expired
-- Check rate limits: [github.com/settings/tokens](https://github.com/settings/tokens)
-
-**Rate limit exceeded:**
-- Wait an hour or use `--cached` to work with existing data
-- Authenticated requests get 5,000/hour vs 60/hour unauthenticated
-
-**Widget not animating:**
-- Check browser console for errors
-- Verify browser supports ES6+ (Chrome 90+, Firefox 88+, Safari 14+)
-- Try `?autoplay=false` to debug
-
-## License
-
-MIT
-
-## Credits
-
-Built by [@kibotu](https://github.com/kibotu)
-
-Inspired by GitHub's contribution graph but showing the complete picture.
+This is a fork of [kibotu/git-history-timeline](https://github.com/kibotu/git-history-timeline),
+which visualizes a complete GitHub contribution history across all branches and repositories.
+See it for the full description, options and an embeddable widget.
