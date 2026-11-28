@@ -2,8 +2,10 @@
 
 Visualize your complete GitHub contribution history. Every commit, every branch, every repository.
 
-[![Build and Deploy](https://github.com/kibotu/git-history-timeline/actions/workflows/deploy.yml/badge.svg)](https://github.com/kibotu/git-history-timeline/actions/workflows/deploy.yml)
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-success)](https://kibotu.github.io/git-history-timeline/)
+**[VasilyAssistant stats on GitHub Pages](https://vasilyassistant.github.io/git-history-timeline/)**: the bot's commit timeline and per-repository breakdown, rebuilt daily.
+
+[![Build and Deploy](https://github.com/VasilyAssistant/git-history-timeline/actions/workflows/deploy.yml/badge.svg)](https://github.com/VasilyAssistant/git-history-timeline/actions/workflows/deploy.yml)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-success)](https://vasilyassistant.github.io/git-history-timeline/)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
